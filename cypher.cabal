@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 81f716ac84f8ddf45c47415232e2f7da97f487f416af67ea6732cf69c8e8af69
+-- hash: 3f28beeea46a3b999f491f656ce400e37a69834d7e14642fa32e4038dd30946a
 
 name:           cypher
 version:        0.1.0.0
@@ -32,6 +32,7 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , random
   default-language: Haskell2010
 
 executable cypher-exe
@@ -44,6 +45,7 @@ executable cypher-exe
   build-depends:
       base >=4.7 && <5
     , cypher
+    , random
   default-language: Haskell2010
 
 test-suite cypher-test
@@ -57,4 +59,5 @@ test-suite cypher-test
   build-depends:
       base >=4.7 && <5
     , cypher
+    , random
   default-language: Haskell2010
