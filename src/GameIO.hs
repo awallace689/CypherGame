@@ -15,11 +15,11 @@ invalidWarn = "Invalid input. Try again...\n\n"
 
 seedGenMenu = "Enter 'q' at any time to quit.\n\nSelect seed type:\n1) [1, 2, 3]\n2) Random\n> "
 
-parseInt :: IO String -> IO Int
-parseInt inp = inp >>= \ inp -> return (read inp :: Int)
+parseIntM :: IO String -> IO Integer
+parseIntM inp = inp >>= \ inp -> return (read inp :: Integer)
 
 intGuard :: String -> Bool
-intGuard x  = let res = readMaybe x :: Maybe Int
+intGuard x  = let res = readMaybe x :: Maybe Integer
               in case res of
                    Just x -> True
                    Nothing -> False
@@ -37,7 +37,7 @@ promptGuard p f w = (putStr p) >>
 
 getSeed :: IO Cypher
 getSeed = do
-  inp <- parseInt $ promptGuard seedGenMenu intGuard invalidWarn
+  inp <- parseIntM $ promptGuard seedGenMenu intGuard invalidWarn
   case inp of
     1 -> return $ Seed [1, 2, 3]
     2 -> randomSeed
