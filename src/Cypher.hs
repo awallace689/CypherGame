@@ -1,6 +1,7 @@
 module Cypher (
     applyCypher
   , randomSeed
+  , randomCypher
   , Cypher(Seed)
 ) where
 
@@ -26,3 +27,17 @@ randomSeedGo xs rs = if length xs == 3
                           then randomSeedGo (r:xs) (tail rs)
                           else randomSeedGo (xs) (tail rs)
                             where r = head rs
+randomCypher :: IO (Cypher -> Cypher)
+randomCypher = newStdGen >>= \ g -> partialApplyCypher getCypherOp (head $ randomRs (1, 12) g)
+
+partialApplyCypher :: IO (Int -> Cypher -> Cypher) -> Int -> IO (Cypher -> Cypher)
+partialApplyCypher c x = c >>= \ c -> return $ c x  
+
+getCypherOp :: IO (Int -> Cypher -> Cypher)
+getCypherOp = newStdGen >>= \ g -> case (head $ randomRs (1 :: Int, 3) g) of
+                                     1 -> return Mul
+                                     2 -> return Sub
+                                     3 -> return Add
+
+
+
