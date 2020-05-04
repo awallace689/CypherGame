@@ -1,4 +1,4 @@
-module GameIO where
+module GameIO (run) where
 
 import Text.Read (readMaybe)
 import Data.Text (pack, strip, Text)
@@ -14,6 +14,11 @@ title =
 invalidWarn = "Invalid input. Try again...\n\n"
 
 seedGenMenu = "Enter 'q' at any time to quit.\n\nSelect seed type:\n1) [1, 2, 3]\n2) Random\n> "
+
+run = do
+  putStr title
+  seed <- getSeed
+  putStr $ "Encoding: " ++ (show seed) ++ "\n"
 
 parseIntM :: IO String -> IO Integer
 parseIntM inp = inp >>= \ inp -> return (read inp :: Integer)

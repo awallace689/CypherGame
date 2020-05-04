@@ -35,7 +35,8 @@ partialApplyCypher :: IO (Integer -> Cypher -> Cypher) -> Integer -> IO (Cypher 
 partialApplyCypher c x = c >>= \ c -> return $ c x  
 
 getCypherOp :: IO (Integer -> Cypher -> Cypher)
-getCypherOp = newStdGen >>= \ g -> case (head $ randomRs (1 :: Integer, 3) g) of
+getCypherOp = newStdGen >>= \ g -> case (head $ randomRs (1 :: Integer, 3) g) 
+                                   of
                                      1 -> return Mul
                                      2 -> return Sub
                                      3 -> return Add
