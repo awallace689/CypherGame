@@ -2,7 +2,8 @@ module Cypher (
     applyCypher
   , randomSeed
   , randomCypher
-  , Cypher(Seed)
+  , evalCypher
+  , Cypher(Seed, Add, Mul)
 ) where
 
 import System.Random (newStdGen, randomRs)
@@ -12,7 +13,7 @@ data Cypher = Div Integer Cypher -- `div`
             | Sub Integer Cypher -- -
             | Add Integer Cypher -- +
             | Seed [Integer]
-              deriving Show
+              deriving (Show, Eq)
 
 applyCypher :: IO (Cypher -> Cypher) -> IO Cypher -> IO Cypher
 applyCypher c1 c2 = c1 >>= \ outC -> c2 >>= \ inC -> return (outC inC)
@@ -41,5 +42,13 @@ getCypherOp = newStdGen >>= \ g -> case (head $ randomRs (1 :: Integer, 3) g)
                                      2 -> return Sub
                                      3 -> return Add
 
+evalCypher :: IO Cypher -> IO Cypher
+evalCypher c = c >>= \ cy -> return $ Seed $ evalCypherGo cy
 
-
+evalCypherGo :: Cypher -> [Integer]
+evalCypherGo c = case c of
+                  (Seed xs) -> xs
+                  (Div i c) -> map ((flip div) i) (evalCypherGo c)
+                  (Mul i c) -> map (* i) (evalCypherGo c)
+                  (Sub i c) -> map ((flip (-)) i) (evalCypherGo c)
+                  (Add i c) -> map (+ i) (evalCypherGo c)
