@@ -24,7 +24,7 @@ run = do
   putStr "\n"
   d <- getDifficulty
   putStr "\n"
-  enc <- buildEncoding d (return s)
+  enc <- buildCypher d (return s)
 
   putStr $ "Encoding: " ++ (show enc) ++ "\n"
 

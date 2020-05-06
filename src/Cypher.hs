@@ -1,16 +1,16 @@
 {-# LANGUAGE LambdaCase #-}
-module Cypher (
-    applyCypher
-  , randomSeed
-  , randomCypher
-  , evalCypher
-  , Cypher()
-  , Difficulty(Easy, Med, Hard)
-  , buildEncoding
-  , unwrapCypher
-  , seed
-) where
 
+module Cypher (
+    seed
+  , randomSeed
+  , buildCypher
+  , unwrapCypher
+  , evalCypher
+  , Cypher(Div, Add, Sub, Mul, Seed)
+  , Difficulty(Easy, Med, Hard)
+  , countMul
+  , adjacentMul
+) where
 
 import System.Random (newStdGen, randomRs)
 
@@ -70,14 +70,55 @@ unwrapCypher c = c >>= \ case
                            (Sub i c) -> return $ c
                            (Add i c) -> return $ c
 
-buildEncoding :: Difficulty -> IO Cypher -> IO Cypher
-buildEncoding Easy c = do { g <- newStdGen ; buildEncodingGo (head $ randomRs (2, 3) g) c }
-buildEncoding Med  c = do { g <- newStdGen ; buildEncodingGo (head $ randomRs (3, 4) g) c }
-buildEncoding Hard c = do { g <- newStdGen ; buildEncodingGo (head $ randomRs (4, 5) g) c }
+buildCypher :: Difficulty -> IO Cypher -> IO Cypher
+buildCypher Easy c = do 
+                      muls <- countMul cypher
+                      if muls > 0
+                      then cypher
+                      else buildCypher Easy c
+                        where
+                          cypher = newStdGen >>= \ g -> buildCypherGo (head $ randomRs (2, 3) g) c
+buildCypher Med  c = do
+                      muls <- countMul cypher
+                      adjMuls <- adjacentMul cypher
+                      if muls > 1 && adjMuls == 0
+                      then cypher
+                      else buildCypher Med c
+                        where
+                          cypher = newStdGen >>= \ g -> buildCypherGo (head $ randomRs (3, 4) g) c
+buildCypher Hard c = do
+                      muls <- countMul cypher
+                      adjMuls <- adjacentMul cypher
+                      if muls > 2 && adjMuls == 0
+                      then cypher
+                      else buildCypher Hard c
+                        where
+                          cypher = newStdGen >>= \ g -> buildCypherGo (head $ randomRs (4, 5) g) c
 
-buildEncodingGo :: Integer -> IO Cypher -> IO Cypher
-buildEncodingGo 0 m = m
-buildEncodingGo i m = do 
-                        outer <- randomCypher
-                        c   <- m
-                        buildEncodingGo (i - 1) (return $ outer c)
+buildCypherGo :: Integer -> IO Cypher -> IO Cypher
+buildCypherGo 0 m = m
+buildCypherGo i m = do 
+                      outer <- randomCypher
+                      c     <- m
+                      buildCypherGo (i - 1) (return $ outer c)
+
+countMul :: IO Cypher -> IO Integer
+countMul c = c >>= \ c -> return (countMulGo c 0)
+
+countMulGo :: Cypher -> Integer -> Integer
+countMulGo (Mul _ c) i = countMulGo c (i + 1)
+countMulGo (Div _ c) i = countMulGo c i
+countMulGo (Add _ c) i = countMulGo c i
+countMulGo (Sub _ c) i = countMulGo c i
+countMulGo (Seed xs) i = i
+
+adjacentMul :: IO Cypher -> IO Integer
+adjacentMul c = c >>= \ c -> return (adjacentMulGo c 0)
+
+adjacentMulGo :: Cypher -> Integer -> Integer
+adjacentMulGo (Mul _ (Mul _ c)) i = adjacentMulGo c (i + 1)
+adjacentMulGo (Mul _ c) i         = adjacentMulGo c i
+adjacentMulGo (Div _ c) i         = adjacentMulGo c i
+adjacentMulGo (Add _ c) i         = adjacentMulGo c i
+adjacentMulGo (Sub _ c) i         = adjacentMulGo c i
+adjacentMulGo (Seed xs) i         = i
