@@ -51,6 +51,8 @@ executable cypher-exe
     , cypher
     , random
     , text
+    , split
+    , ansi-terminal
   default-language: Haskell2010
 
 test-suite cypher-test

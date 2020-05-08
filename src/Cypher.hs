@@ -3,13 +3,12 @@
 module Cypher (
     seed
   , randomSeed
-  , buildCypher
+  , getCypher
   , unwrapCypher
   , evalCypher
-  , Cypher(Div, Add, Sub, Mul, Seed)
+  , Cypher()
   , Difficulty(Easy, Med, Hard)
-  , countMul
-  , adjacentMul
+  , parseOp
 ) where
 
 import System.Random (newStdGen, randomRs)
@@ -51,16 +50,13 @@ getCypherOp = newStdGen >>= \ g -> case (head $ randomRs (1 :: Integer, 3) g) of
                                      2 -> return Sub
                                      3 -> return Add
 
-evalCypher :: IO Cypher -> IO Cypher
-evalCypher c = c >>= \ cy -> return $ Seed $ evalCypherGo cy
-
-evalCypherGo :: Cypher -> [Integer]
-evalCypherGo c = case c of
-                  (Seed xs) -> xs
-                  (Div i c) -> map ((flip div) i) (evalCypherGo c)
-                  (Mul i c) -> map (* i)          (evalCypherGo c)
-                  (Sub i c) -> map ((flip (-)) i) (evalCypherGo c)
-                  (Add i c) -> map (+ i)          (evalCypherGo c)
+evalCypher :: Cypher -> [Integer]
+evalCypher c = case c of
+                (Seed xs) -> xs
+                (Div i c) -> map ((flip div) i) (evalCypher c)
+                (Mul i c) -> map (* i)          (evalCypher c)
+                (Sub i c) -> map ((flip (-)) i) (evalCypher c)
+                (Add i c) -> map (+ i)          (evalCypher c)
 
 unwrapCypher :: IO Cypher -> IO Cypher
 unwrapCypher c = c >>= \ case
@@ -70,40 +66,46 @@ unwrapCypher c = c >>= \ case
                            (Sub i c) -> return $ c
                            (Add i c) -> return $ c
 
-buildCypher :: Difficulty -> IO Cypher -> IO Cypher
-buildCypher Easy c = do 
-                      muls <- countMul cypher
-                      if muls > 0
-                      then cypher
-                      else buildCypher Easy c
-                        where
-                          cypher = newStdGen >>= \ g -> buildCypherGo (head $ randomRs (2, 3) g) c
-buildCypher Med  c = do
-                      muls <- countMul cypher
-                      adjMuls <- adjacentMul cypher
-                      if muls > 1 && adjMuls == 0
-                      then cypher
-                      else buildCypher Med c
-                        where
-                          cypher = newStdGen >>= \ g -> buildCypherGo (head $ randomRs (3, 4) g) c
-buildCypher Hard c = do
-                      muls <- countMul cypher
-                      adjMuls <- adjacentMul cypher
-                      if muls > 2 && adjMuls == 0
-                      then cypher
-                      else buildCypher Hard c
-                        where
-                          cypher = newStdGen >>= \ g -> buildCypherGo (head $ randomRs (4, 5) g) c
+getCypher:: Difficulty -> Cypher -> IO Cypher
+getCypher Easy c = do 
+                      cypher <- newStdGen >>= \ g -> buildCypher (head $ randomRs (2, 3) g) c
+                      let muls = countMul cypher
+                      let adjMuls = adjacentMul cypher
+                      if (muls > 0)
+                      then return cypher
+                      else getCypher Easy c
 
-buildCypherGo :: Integer -> IO Cypher -> IO Cypher
-buildCypherGo 0 m = m
-buildCypherGo i m = do 
+getCypher Med  c = do
+                      cypher <- newStdGen >>= \ g -> buildCypher (head $ randomRs (3, 4) g) c
+                      let muls = countMul cypher
+                      let adjMuls = adjacentMul cypher
+                      if (muls > 1) && (adjMuls == 0)
+                      then return cypher
+                      else getCypher Med c
+
+getCypher Hard c = do
+                      cypher <- newStdGen >>= \ g -> buildCypher (head $ randomRs (4, 5) g) c
+                      let muls = countMul cypher
+                      let adjMuls = adjacentMul cypher
+                      if (muls > 2) && (adjMuls == 0)
+                      then return cypher
+                      else getCypher Hard c
+          
+parseOp :: [String] -> (Cypher -> Cypher)
+parseOp tokens = case tokens !! 0 of
+                   "+" -> Add (read (tokens !! 1) :: Integer)
+                   "-" -> Sub (read (tokens !! 1) :: Integer)
+                   "*" -> Mul (read (tokens !! 1) :: Integer)
+                   "/" -> Div (read (tokens !! 1) :: Integer)
+
+buildCypher :: Integer -> Cypher -> IO Cypher
+buildCypher 0 c = return c
+buildCypher i c = do 
                       outer <- randomCypher
-                      c     <- m
-                      buildCypherGo (i - 1) (return $ outer c)
+                      buildCypher (i - 1) (outer c)
 
-countMul :: IO Cypher -> IO Integer
-countMul c = c >>= \ c -> return (countMulGo c 0)
+countMul :: Cypher -> Integer
+countMul c = countMulGo c 0
 
 countMulGo :: Cypher -> Integer -> Integer
 countMulGo (Mul _ c) i = countMulGo c (i + 1)
@@ -112,8 +114,8 @@ countMulGo (Add _ c) i = countMulGo c i
 countMulGo (Sub _ c) i = countMulGo c i
 countMulGo (Seed xs) i = i
 
-adjacentMul :: IO Cypher -> IO Integer
-adjacentMul c = c >>= \ c -> return (adjacentMulGo c 0)
+adjacentMul :: Cypher -> Integer
+adjacentMul c = adjacentMulGo c 0
 
 adjacentMulGo :: Cypher -> Integer -> Integer
 adjacentMulGo (Mul _ (Mul _ c)) i = adjacentMulGo c (i + 1)
