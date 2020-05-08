@@ -20,9 +20,9 @@ seedGenMenu = "Enter 'q' at any time to quit.\n\nSelect seed type:\n1) [1, 2, 3]
 
 difficultyMenu = "Enter difficulty:\n1) Easy\n2) Medium\n3) Hard\n\n> "
 
-opMenu = "\nEnter operation followed by integer...\n" ++
-         "Operations: [+, -, *, +]\n" ++
-         "Ex: + 7\n\nEnter 'u' to undo.\n\n> "
+opMenu = "\nDecode the encoding with your cypher!\nEnter operation followed by integer...\n" ++
+         "Operations: [+, -, *, /]\n" ++
+         "Ex: '+ 7'. Beware integer division!\n\nEnter 'u' to undo.\n\n> "
 
 run = do
   clearScreen
